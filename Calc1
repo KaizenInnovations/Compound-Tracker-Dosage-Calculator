@@ -1,0 +1,1151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compound Tracker & Dosage Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <style>
+        :root {
+            /* Light Theme (Default) */
+            --bg-color: #f5f5f5; 
+            --card-bg-color: #ffffff;
+            --text-primary-color: #212121; 
+            --text-secondary-color: #757575; 
+            --divider-color: #BDBDBD; 
+            --input-bg-color: #f9f9f9;
+            --input-border-color: #BDBDBD;
+            --input-focus-border-color: #1976D2; 
+            --input-focus-shadow-color: rgba(25, 118, 210, 0.2);
+            
+            --primary-color: #1976D2; /* Material Blue 700 */
+            --primary-dark-color: #0D47A1; /* Material Blue 900 */
+            
+            --accent-color: #009688; /* Material Teal 500 - General accent if needed */
+            --accent-dark-color: #00796B; /* Material Teal 700 */
+            
+            --button-primary-bg: var(--primary-color);
+            --button-primary-hover-bg: var(--primary-dark-color);
+            
+            --button-secondary-bg: #FF9800; /* Orange 500 */
+            --button-secondary-hover-bg: #F57C00; /* Orange 700 */
+            
+            --button-action-bg: #2196F3; /* Blue 500 */
+            --button-action-hover-bg: #1976D2; /* Blue 700 */
+
+            --button-neutral-bg: #757575; /* Grey 600 */
+            --button-neutral-hover-bg: #616161; /* Grey 700 */
+
+            --error-bg-color: #ffebee; 
+            --error-text-color: #C62828; 
+            --error-border-color: #ef9a9a; 
+            --success-bg-color: #E8F5E9; 
+            --success-text-color: #2E7D32; 
+            --success-border-color: #A5D6A7; 
+            --success-span-color: #1B5E20; 
+            --graph-disclaimer-bg: #fff3e0;
+            --graph-disclaimer-text: #e65100;
+            --graph-disclaimer-border: #ffcc80;
+            
+            /* Syringe CSS variables are less critical now as JS handles colors directly for drawing, but kept for consistency */
+            --syringe-body-fill-light: #ECEFF1; 
+            --syringe-body-stroke-light: #78909C; 
+            --syringe-plunger-fill-light: #B0BEC5;
+            --syringe-plunger-top-fill-light: #78909C;
+            --syringe-needle-fill-light: #90A4AE;
+            --syringe-tick-color-light: #546E7A; 
+            --syringe-label-color-light: #37474F; 
+
+            --chart-grid-color: 'rgba(0, 0, 0, 0.1)';
+            --chart-ticks-color: '#666';
+            --chart-label-color: '#666';
+            --chart-legend-color: '#333';
+        }
+
+        .dark-mode {
+            /* Dark Theme Overrides */
+            --bg-color: #121212;
+            --card-bg-color: #1e1e1e; 
+            --text-primary-color: #e0e0e0; 
+            --text-secondary-color: #b0b0b0; 
+            --divider-color: #424242; 
+            --input-bg-color: #2c2c2c;
+            --input-border-color: #525252;
+            --input-focus-border-color: #64B5F6; 
+            --input-focus-shadow-color: rgba(100, 181, 246, 0.25);
+
+            --primary-color: #64B5F6; 
+            --primary-dark-color: #2196F3; 
+
+            --accent-color: #4DB6AC; 
+            --accent-dark-color: #26A69A;
+            
+            --button-primary-bg: var(--primary-color);
+            --button-primary-hover-bg: var(--primary-dark-color);
+
+            --button-secondary-bg: #EF6C00; 
+            --button-secondary-hover-bg: #E65100; 
+            
+            --button-action-bg: #42A5F5; 
+            --button-action-hover-bg: #1E88E5; 
+
+            --button-neutral-bg: #616161; 
+            --button-neutral-hover-bg: #424242; 
+
+            --error-bg-color: #2c1d1f; 
+            --error-text-color: #ffcdd2; 
+            --error-border-color: #ef9a9a; 
+            --success-bg-color: #1a2c1e; 
+            --success-text-color: #a5d6a7; 
+            --success-border-color: #81c784; 
+            --success-span-color: #c8e6c9; 
+            --graph-disclaimer-bg: #3e2723;
+            --graph-disclaimer-text: #ffcc80;
+            --graph-disclaimer-border: #8d6e63;
+            
+            /* Syringe CSS variables for dark mode (less critical now for drawing) */
+            --syringe-body-fill-dark: transparent;   
+            --syringe-body-stroke-dark: #90A4AE; 
+            --syringe-plunger-fill-dark: #78909C; 
+            --syringe-plunger-top-fill-dark: #B0BEC5;
+            --syringe-needle-fill-dark: #B0BEC5;   
+            --syringe-tick-color-dark: #FFFFFF;   
+            --syringe-label-color-dark: #FFFFFF;  
+            
+            --chart-grid-color: 'rgba(255, 255, 255, 0.15)';
+            --chart-ticks-color: '#aaa';
+            --chart-label-color: '#ccc';
+            --chart-legend-color: '#eee';
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary-color);
+            margin: 0;
+            padding-top: 1rem; 
+            padding-bottom: 1rem; 
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        .container {
+            max-width: 700px; 
+            margin: 1rem auto;
+            padding: 24px; 
+            background-color: var(--card-bg-color);
+            border-radius: 8px; 
+            box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23); 
+            transition: background-color 0.3s ease;
+        }
+        /* Theme toggle switch */
+        .theme-switch-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end; 
+            margin-bottom: 1rem;
+            margin-right: 5px; 
+        }
+        .theme-switch {
+            display: inline-block;
+            height: 24px; 
+            position: relative;
+            width: 48px; 
+        }
+        .theme-switch input {
+            display:none;
+        }
+        .slider {
+            background-color: #ccc;
+            bottom: 0;
+            cursor: pointer;
+            left: 0;
+            position: absolute;
+            right: 0;
+            top: 0;
+            transition: .4s;
+            border-radius: 24px; 
+        }
+        .slider:before {
+            background-color: #fff;
+            bottom: 3px; 
+            content: "";
+            height: 18px; 
+            left: 3px; 
+            position: absolute;
+            transition: .4s;
+            width: 18px; 
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color); 
+        }
+        input:checked + .slider:before {
+            transform: translateX(24px); 
+        }
+        .theme-switch-wrapper span {
+            margin-left: 8px;
+            font-size: 0.9rem;
+            color: var(--text-secondary-color);
+        }
+
+
+        .disclaimer {
+            background-color: var(--error-bg-color);
+            color: var(--error-text-color);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--error-border-color);
+            margin-bottom: 24px;
+            font-size: 0.875rem;
+            text-align: left; 
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .disclaimer strong {
+            color: var(--error-text-color);
+            font-weight: 600;
+        }
+        .disclaimer.graph-disclaimer { 
+            background-color: var(--graph-disclaimer-bg); 
+            color: var(--graph-disclaimer-text); 
+            border-color: var(--graph-disclaimer-border); 
+            margin-top: 16px;
+        }
+        h1 {
+            font-size: 1.75rem; 
+            font-weight: 600;
+            color: var(--primary-color);
+            text-align: center;
+            margin-bottom: 16px; 
+            transition: color 0.3s ease;
+        }
+        h2 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--text-primary-color);
+            margin-top: 24px;
+            margin-bottom: 16px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--divider-color);
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+        h3 {
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--text-secondary-color);
+            margin-top: 16px;
+            margin-bottom: 8px;
+            transition: color 0.3s ease;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+            position: relative;
+        }
+        .grid-2-col {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+        }
+        .button-group {
+            display: flex;
+            gap: 10px; 
+            margin-top: 10px;
+        }
+        .button-group button {
+            flex-grow: 1; 
+        }
+        .info-note { 
+            font-size: 0.75rem;
+            color: var(--text-secondary-color);
+            margin-top: 8px; 
+            margin-bottom: 16px; 
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        label {
+            display: block;
+            font-size: 0.875rem; 
+            color: var(--text-secondary-color);
+            margin-bottom: 8px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+
+        input[type="number"], select {
+            width: 100%; 
+            padding: 12px 10px; 
+            border: 1px solid var(--input-border-color);
+            border-radius: 4px; 
+            background-color: var(--input-bg-color); 
+            box-sizing: border-box;
+            font-size: 1rem;
+            color: var(--text-primary-color);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+        }
+        input[type="number"]:focus, select:focus {
+            border-color: var(--input-focus-border-color);
+            box-shadow: 0 0 0 2px var(--input-focus-shadow-color); 
+            background-color: var(--card-bg-color);
+            outline: none;
+        }
+        select {
+            appearance: none; 
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23757575' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 10px center;
+            padding-right: 30px; 
+        }
+        .dark-mode select {
+             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%23b0b0b0' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z'/%3E%3C/svg%3E");
+        }
+
+        /* General Button Styling - to be overridden by specific button IDs for distinct roles */
+        button { 
+            width: 100%; 
+            padding: 10px 16px;
+            color: white; 
+            border: none;
+            border-radius: 4px; 
+            font-weight: 600; 
+            font-size: 0.9375rem; 
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+            cursor: pointer;
+            box-shadow: 0 2px 2px 0 rgba(0,0,0,0.14), 0 3px 1px -2px rgba(0,0,0,0.12), 0 1px 5px 0 rgba(0,0,0,0.20); 
+            transition: background-color 0.2s ease-out, box-shadow 0.2s ease-out, transform 0.1s ease-out;
+            margin-top: 16px; 
+        }
+        /* Specific Button Styles */
+        button#calculateTotalVolumeBtn {
+            background-color: var(--button-primary-bg);
+        }
+        button#calculateTotalVolumeBtn:hover {
+            background-color: var(--button-primary-hover-bg);
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12), 0 2px 4px -1px rgba(0,0,0,0.20); 
+        }
+        button#calculateTotalVolumeBtn:active {
+            background-color: var(--button-primary-hover-bg);
+            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.20); 
+            transform: translateY(1px);
+        }
+
+        button#addCompoundToSyringeBtn {
+            background-color: var(--button-secondary-bg);
+        }
+        button#addCompoundToSyringeBtn:hover {
+            background-color: var(--button-secondary-hover-bg);
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12), 0 2px 4px -1px rgba(0,0,0,0.20); 
+        }
+         button#addCompoundToSyringeBtn:active {
+            background-color: var(--button-secondary-hover-bg);
+            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.20); 
+            transform: translateY(1px);
+        }
+
+        button#recalculateGraphBtn {
+            background-color: var(--button-action-bg);
+        }
+        button#recalculateGraphBtn:hover {
+            background-color: var(--button-action-hover-bg);
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12), 0 2px 4px -1px rgba(0,0,0,0.20); 
+        }
+         button#recalculateGraphBtn:active {
+            background-color: var(--button-action-hover-bg);
+            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.20); 
+            transform: translateY(1px);
+        }
+        
+        button#clearSyringeBtn, button#clearGraphBtn {
+            background-color: var(--button-neutral-bg); 
+            margin-top: 0; 
+        }
+        button#clearSyringeBtn:hover, button#clearGraphBtn:hover {
+            background-color: var(--button-neutral-hover-bg);
+            box-shadow: 0 4px 5px 0 rgba(0,0,0,0.14), 0 1px 10px 0 rgba(0,0,0,0.12), 0 2px 4px -1px rgba(0,0,0,0.20); 
+        }
+        button#clearSyringeBtn:active, button#clearGraphBtn:active {
+            background-color: var(--button-neutral-hover-bg);
+            box-shadow: 0 8px 10px 1px rgba(0,0,0,0.14), 0 3px 14px 2px rgba(0,0,0,0.12), 0 5px 5px -3px rgba(0,0,0,0.20); 
+            transform: translateY(1px);
+        }
+
+
+        .result {
+            margin-top: 24px;
+            padding: 16px;
+            background-color: var(--success-bg-color); 
+            border: 1px solid var(--success-border-color); 
+            border-radius: 4px;
+            text-align: center;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        .result p {
+            font-size: 1rem;
+            color: var(--success-text-color); 
+            margin: 0 0 8px 0;
+        }
+        .result span {
+            font-weight: 700;
+            font-size: 1.75rem; 
+            color: var(--success-span-color); 
+        }
+        #syringeContentsList {
+            list-style: none;
+            padding: 0;
+            margin-top: 8px;
+            margin-bottom: 16px;
+            border: 1px solid var(--divider-color);
+            border-radius: 4px;
+            transition: border-color 0.3s ease;
+        }
+        #syringeContentsList li {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--divider-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.3s ease;
+        }
+        #syringeContentsList li:last-child {
+            border-bottom: none;
+        }
+        #syringeContentsList .compound-color-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            display: inline-block;
+        }
+
+        #pkChartContainer, #syringeVisualContainer {
+            margin-top: 24px;
+            padding: 16px;
+            background-color: var(--card-bg-color); 
+            border: 1px solid var(--divider-color);
+            border-radius: 4px;
+            min-height: 330px; 
+            position: relative; 
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+        #pkChartContainer { min-height: 400px; }
+
+        #syringeSVG {
+            max-width: 100%; 
+        }
+        .error-message-display { 
+            background-color: var(--error-bg-color);
+            color: var(--error-text-color);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--error-border-color);
+            margin-top: 16px; 
+            font-size: 0.875rem;
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+        
+        #syringeTooltip {
+            position: absolute; 
+            background-color: rgba(0,0,0,0.85); 
+            color: white;
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            pointer-events: none; 
+            display: none; 
+            z-index: 100;
+            white-space: nowrap;
+            max-width: 200px; 
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .dark-mode #syringeTooltip {
+            background-color: rgba(224, 224, 224, 0.9); 
+            color: #1e1e1e; 
+        }
+
+
+        @media (max-width: 600px) {
+            body { 
+                padding-top: 0; 
+            }
+            .container { 
+                margin: 0; 
+                border-radius: 0; 
+                box-shadow: none; 
+                padding: 16px; 
+            }
+            h1 { 
+                font-size: 1.5rem; 
+            }
+            .theme-switch-wrapper {
+                margin-top: 8px; 
+                justify-content: center; 
+            }
+            #syringeVisualContainer, #pkChartContainer { 
+                min-height: 300px; 
+            }
+            .grid-2-col { 
+                grid-template-columns: 1fr; 
+            }
+            .button-group { 
+                flex-direction: column; 
+            }
+            .button-group button {
+                margin-top: 10px; 
+            }
+            .button-group button:first-child {
+                margin-top: 0; 
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="theme-switch-wrapper">
+            <label class="theme-switch" for="themeToggleCheckbox">
+                <input type="checkbox" id="themeToggleCheckbox" />
+                <span class="slider round"></span>
+            </label>
+            <span>Dark Mode</span>
+        </div>
+
+        <div class="disclaimer">
+            <p><strong>IMPORTANT DISCLAIMER:</strong> This application is for informational and tracking purposes ONLY. The information provided and calculations performed should NOT be considered medical advice. Always consult with a qualified healthcare professional before making any decisions regarding your health, treatment, or use of any compounds. The creators of this tool are not liable for any misuse or misinterpretation of the information provided.</p>
+        </div>
+
+        <h1>Compound Dosage Calculator</h1>
+
+        <section>
+            <h2>1. Select & Add Compound to Syringe</h2>
+            <div class="form-group">
+                <input type="hidden" id="compoundType" value="steroid">
+                <label for="specificCompound">Specific AAS:</label>
+                <select id="specificCompound">
+                    <option value="">-- Select AAS --</option>
+                </select>
+            </div>
+            <div class="grid-2-col">
+                <div class="form-group">
+                    <label for="desiredDose">Desired Dose (mg) for this compound:</label>
+                    <input type="number" id="desiredDose" placeholder="e.g., 50" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="concentration">Concentration (mg/mL) of this compound:</label>
+                    <input type="number" id="concentration" placeholder="e.g., 200" step="any">
+                </div>
+            </div>
+            <button id="addCompoundToSyringeBtn">Add Compound to Syringe & Graph</button>
+            <p class="info-note">(PK graph uses settings from Section 3 for each compound added)</p> 
+            
+            <h3>Syringe Contents:</h3>
+            <ul id="syringeContentsList">
+                </ul>
+            <button id="clearSyringeBtn" style="display: none;">Clear Syringe Contents</button>
+        </section>
+
+        <section>
+            <h2>2. Calculate Total Volume & Visualize Syringe</h2>
+            <div class="grid-2-col">
+                <div class="form-group">
+                    <label for="syringeSize">Syringe Size (mL):</label>
+                    <select id="syringeSize">
+                        <option value="0.5">0.5 mL</option>
+                        <option value="1">1 mL</option>
+                        <option value="3">3 mL</option>
+                    </select>
+                </div>
+                 <div class="form-group">
+                    <label for="vialSize">Vial Size (mL) (Informational):</label>
+                    <select id="vialSize">
+                        <option value="10">10 mL (Default)</option>
+                        <option value="20">20 mL</option>
+                    </select>
+                </div>
+            </div>
+            <button id="calculateTotalVolumeBtn">Calculate Total Volume & Show Syringe</button>
+            <div id="resultDisplay" class="result" style="display: none;">
+                <p>Total volume to draw:</p>
+                <span id="totalCalculatedVolume">0.00 mL</span>
+            </div>
+            <div id="syringeVisualContainer" style="display: none;">
+                <svg id="syringeSVG" width="150" height="300"></svg> 
+                <div id="syringeTooltip"></div> 
+            </div>
+        </section>
+        
+        <section>
+            <h2>3. Pharmacokinetic Estimator</h2>
+            <div class="disclaimer graph-disclaimer">
+                <p><strong>GRAPH DISCLAIMER:</strong> This graph provides a highly simplified estimation of compound levels over time based on average half-lives and regular dosing. It is for illustrative purposes ONLY and is NOT a precise medical prediction. Actual pharmacokinetics vary significantly. DO NOT use this for medical decisions.</p>
+            </div>
+            <div class="grid-2-col">
+                <div class="form-group">
+                    <label for="injectionIntervalDays">Injection Interval (days for PK Graph):</label>
+                    <input type="number" id="injectionIntervalDays" value="3.5" min="0.1" step="any">
+                </div>
+                <div class="form-group">
+                    <label for="simulationDuration">Simulation Duration (weeks for PK Graph):</label>
+                    <input type="number" id="simulationDuration" value="8" min="1" max="52" step="1">
+                </div>
+            </div>
+            <div class="button-group">
+                <button id="recalculateGraphBtn" style="display: none;" title="Updates all graph lines using the current Interval and Duration settings above.">Recalculate PK Graph</button>
+                <button id="clearGraphBtn" style="display: none;">Clear PK Graph</button>
+            </div>
+            <div id="pkChartContainer" style="display: none;">
+                <canvas id="pkChart"></canvas>
+            </div>
+        </section>
+         <div id="errorDisplay" class="error-message-display" style="display: none;">
+            <p id="errorMessage"></p>
+        </div>
+    </div>
+
+    <script>
+        // --- Compound Data (unchanged) ---
+        const compounds = { 
+            steroid: [
+                "Testosterone (Base/Suspension)", "Testosterone Acetate", "Testosterone Cypionate", "Testosterone Enanthate",
+                "Testosterone Propionate", "Testosterone Phenylpropionate", "Testosterone Isocaproate", "Testosterone Decanoate",
+                "Testosterone Undecanoate (Oral/Injectable)", "Sustanon (Testosterone Blend)", 
+                "Nandrolone (Base)", "Nandrolone Decanoate (Deca-Durabolin)", "Nandrolone Phenylpropionate (NPP, Durabolin)",
+                "Nandrolone Cypionate", "Nandrolone Laurate",
+                "Trenbolone (Base)", "Trenbolone Acetate (Finaplix)", "Trenbolone Enanthate", "Trenbolone Hexahydrobenzylcarbonate (Parabolan)",
+                "Boldenone (Base)", "Boldenone Undecylenate (Equipoise)", "Boldenone Acetate", "Boldenone Cypionate",
+                "Drostanolone (Base)", "Drostanolone Propionate (Masteron P)", "Drostanolone Enanthate (Masteron E)",
+                "Methenolone (Base)", "Methenolone Acetate (Primobolan tabs/injectable)", "Methenolone Enanthate (Primobolan Depot)",
+                "Oxandrolone (Anavar)", "Oxymetholone (Anadrol, Anapolon)", "Stanozolol (Winstrol tabs/injectable)",
+                "Methandrostenolone (Dianabol, Methandienone)", "Methyltestosterone", "Fluoxymesterone (Halotestin)",
+                "Mesterolone (Proviron)", "Turinabol (Oral Turinabol, Tbol, Chlorodehydromethyltestosterone)",
+                "Methasterone (Superdrol)", "Methyl-1-testosterone (M1T)", "Mibolerone (Cheque Drops)",
+                "1-Testosterone (Dihydroboldenone, DHB)", "Desoxymethyltestosterone (DMT, Madol, Pheraplex)", "Dymethazine (DMZ)",
+                "Estra-4,9,11-triene-3,17-dione (Trendione)", "Halodrol (Chlorodehydromethylandrostenediol, HD)",
+                "Epistane (Methylepitiostanol)", "Prostanozol", "Trestolone Acetate (MENT)", "Clostebol Acetate",
+                "Danazol", "Formebolone", "Methandriol Dipropionate", "Stenbolone Acetate", "Thiomesterone (Tiomesterone)"
+            ]
+        };
+        const halfLives = { 
+            "Testosterone (Base/Suspension)": 0.2, "Testosterone Acetate": 1, "Testosterone Propionate": 2,
+            "Testosterone Phenylpropionate": 3, "Testosterone Isocaproate": 4.5, "Testosterone Enanthate": 7,
+            "Testosterone Cypionate": 8, "Testosterone Decanoate": 10, "Testosterone Undecanoate (Injectable)": 20,
+            "Testosterone Undecanoate (Oral)": 0.2, "Sustanon (Testosterone Blend)": 7, "Nandrolone (Base)": 0.3,
+            "Nandrolone Phenylpropionate (NPP, Durabolin)": 3, "Nandrolone Decanoate (Deca-Durabolin)": 10,
+            "Nandrolone Cypionate": 8, "Nandrolone Laurate": 18, "Trenbolone (Base)": 0.2,
+            "Trenbolone Acetate (Finaplix)": 1, "Trenbolone Enanthate": 7, "Trenbolone Hexahydrobenzylcarbonate (Parabolan)": 8,
+            "Boldenone (Base)": 0.3, "Boldenone Undecylenate (Equipoise)": 14, "Boldenone Acetate": 2, "Boldenone Cypionate": 8,
+            "Drostanolone (Base)": 0.2, "Drostanolone Propionate (Masteron P)": 2, "Drostanolone Enanthate (Masteron E)": 7,
+            "Methenolone (Base)": 0.3, "Methenolone Acetate (Primobolan tabs/injectable)": 0.5,
+            "Methenolone Enanthate (Primobolan Depot)": 7, "Stanozolol (Winstrol tabs/injectable)": 0.4,
+            "Trestolone Acetate (MENT)": 0.5, "Oxandrolone (Anavar)": 0.4, "Oxymetholone (Anadrol, Anapolon)": 0.4,
+            "Methandrostenolone (Dianabol, Methandienone)": 0.25, "Turinabol (Oral Turinabol, Tbol, Chlorodehydromethyltestosterone)": 0.67,
+            "Fluoxymesterone (Halotestin)": 0.4, "Mesterolone (Proviron)": 0.5, "Methyltestosterone": 0.2,
+            "1-Testosterone (Dihydroboldenone, DHB)": 4, 
+            "Clostebol Acetate": 1, 
+            "Methandriol Dipropionate": 2.5, 
+            "Stenbolone Acetate": 1.5 
+        };
+        const lineColors = ["#E91E63", "#9C27B0", "#3F51B5", "#03A9F4", "#4CAF50", "#FFC107", "#FF5722", "#795548", "#607D8B", "#00BCD4"];
+        let syringeColorIndex = 0; 
+        let pkChartInstance = null;
+        let graphedCompoundDetails = []; 
+        let currentSyringeCompounds = []; 
+
+        // DOM Elements (unchanged)
+        const specificCompoundSelect = document.getElementById('specificCompound');
+        const desiredDoseInput = document.getElementById('desiredDose');
+        const concentrationInput = document.getElementById('concentration');
+        const syringeSizeSelect = document.getElementById('syringeSize');
+        const vialSizeSelect = document.getElementById('vialSize'); 
+        const addCompoundToSyringeBtn = document.getElementById('addCompoundToSyringeBtn');
+        const clearSyringeBtn = document.getElementById('clearSyringeBtn');
+        const syringeContentsListUI = document.getElementById('syringeContentsList');
+        const calculateTotalVolumeBtn = document.getElementById('calculateTotalVolumeBtn'); 
+        const resultDisplay = document.getElementById('resultDisplay');
+        const totalCalculatedVolumeSpan = document.getElementById('totalCalculatedVolume'); 
+        const errorDisplay = document.getElementById('errorDisplay');
+        const errorMessageP = document.getElementById('errorMessage');
+        const syringeVisualContainer = document.getElementById('syringeVisualContainer');
+        const syringeSVG = document.getElementById('syringeSVG');
+        const syringeTooltip = document.getElementById('syringeTooltip'); 
+        const injectionIntervalDaysInput = document.getElementById('injectionIntervalDays'); 
+        const simulationDurationInput = document.getElementById('simulationDuration');
+        const recalculateGraphBtn = document.getElementById('recalculateGraphBtn');
+        const clearGraphBtn = document.getElementById('clearGraphBtn');
+        const pkChartContainer = document.getElementById('pkChartContainer');
+        const pkChartCanvas = document.getElementById('pkChart');
+        const themeToggleCheckbox = document.getElementById('themeToggleCheckbox');
+
+
+        // --- Theme Management ---
+        function applyTheme(isDark) {
+            if (isDark) {
+                document.body.classList.add('dark-mode');
+                themeToggleCheckbox.checked = true;
+            } else {
+                document.body.classList.remove('dark-mode');
+                themeToggleCheckbox.checked = false;
+            }
+            requestAnimationFrame(() => {
+                if (pkChartInstance && graphedCompoundDetails.length > 0) {
+                    updatePkChart(); 
+                }
+                if (syringeVisualContainer.style.display === 'flex') { 
+                    const totalVolume = currentSyringeCompounds.reduce((sum, c) => sum + c.volume, 0);
+                    const selectedSyringeMaxVolume = parseFloat(syringeSizeSelect.value);
+                    if (currentSyringeCompounds.length > 0 && totalVolume > 0) {
+                         drawMultiCompoundSyringe(currentSyringeCompounds, totalVolume, selectedSyringeMaxVolume);
+                    } else {
+                         drawMultiCompoundSyringe([], 0, selectedSyringeMaxVolume); 
+                    }
+                }
+            });
+        }
+
+        themeToggleCheckbox.addEventListener('change', function() {
+            localStorage.setItem('theme', this.checked ? 'dark' : 'light');
+            applyTheme(this.checked);
+        });
+
+        function loadThemePreference() {
+            const savedTheme = localStorage.getItem('theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+                applyTheme(true);
+            } else {
+                applyTheme(false); 
+            }
+        }
+        
+        // --- Core App Logic ---
+        function populateAASCompounds() { 
+            specificCompoundSelect.innerHTML = '<option value="">-- Select AAS --</option>';
+            if (compounds.steroid) {
+                compounds.steroid.forEach(compound => {
+                    const option = document.createElement('option');
+                    option.value = compound;
+                    option.textContent = compound;
+                    specificCompoundSelect.appendChild(option);
+                });
+            }
+        }
+        
+        function showError(message, isPkError = false) { 
+            const currentError = errorMessageP.textContent;
+            if (isPkError) {
+                errorMessageP.textContent = (currentError && !currentError.includes(message) ? currentError + "\n" : "") + message;
+            } else {
+                errorMessageP.textContent = message;
+                resultDisplay.style.display = 'none';
+                syringeVisualContainer.style.display = 'none';
+            }
+            errorDisplay.style.display = 'block';
+        }
+
+        addCompoundToSyringeBtn.addEventListener('click', function() { 
+            if (!errorMessageP.textContent.includes("PK Graph") && !errorMessageP.textContent.includes("Half-life data not available")) {
+                errorDisplay.style.display = 'none';
+                errorMessageP.textContent = '';
+            }
+            const compoundName = specificCompoundSelect.value;
+            const desiredDose = parseFloat(desiredDoseInput.value);
+            const concentration = parseFloat(concentrationInput.value);
+            if (!compoundName) { showError("Please select a specific AAS to add."); return; }
+            if (isNaN(desiredDose) || desiredDose <= 0) { showError("Please enter a valid desired dose for this compound."); return; }
+            if (isNaN(concentration) || concentration <= 0) { showError("Please enter a valid concentration for this compound."); return; }
+            const volume = desiredDose / concentration;
+            if (volume <= 0 || !isFinite(volume)) { showError("Calculated volume for this compound is invalid."); return; }
+            const assignedColor = lineColors[syringeColorIndex % lineColors.length];
+            currentSyringeCompounds.push({ name: compoundName, dose: desiredDose, concentration: concentration, volume: volume, color: assignedColor });
+            syringeColorIndex++; 
+            updateSyringeContentsUI();
+            clearSyringeBtn.style.display = 'inline-block';
+            const injectionInterval = parseFloat(injectionIntervalDaysInput.value); 
+            const simulationWeeks = parseInt(simulationDurationInput.value); 
+            if (!halfLives[compoundName]) {
+                showError(`PK Graph: Half-life data not available for ${compoundName}. Compound added to syringe but NOT to graph.`, true);
+            } else if (isNaN(injectionInterval) || injectionInterval <= 0) { 
+                showError(`PK Graph: Invalid injection interval (days) for ${compoundName}. Compound added to syringe but NOT to graph.`, true);
+            } else if (isNaN(simulationWeeks) || simulationWeeks <= 0 || simulationWeeks > 52) {
+                showError(`PK Graph: Invalid simulation duration for ${compoundName}. Compound added to syringe but NOT to graph.`, true);
+            } else {
+                const pkCompoundDetail = { originalName: compoundName, displayName: `${compoundName} (${desiredDose}mg, E${injectionInterval.toFixed(1)}D)`, dose: desiredDose, injectionIntervalDays: injectionInterval, halfLifeDays: halfLives[compoundName], color: assignedColor };
+                graphedCompoundDetails.push(pkCompoundDetail);
+                updatePkChart(); 
+                pkChartContainer.style.display = 'block';
+                clearGraphBtn.style.display = 'inline-block';
+                recalculateGraphBtn.style.display = 'inline-block';
+            }
+        });
+
+        function updateSyringeContentsUI() { 
+            syringeContentsListUI.innerHTML = '';
+            if (currentSyringeCompounds.length === 0) {
+                const li = document.createElement('li');
+                li.textContent = "No compounds added to syringe yet.";
+                li.style.color = "var(--text-secondary-color)"; 
+                syringeContentsListUI.appendChild(li);
+                clearSyringeBtn.style.display = 'none';
+                return;
+            }
+            currentSyringeCompounds.forEach(c => {
+                const li = document.createElement('li');
+                const colorIndicator = `<span class="compound-color-indicator" style="background-color: ${c.color};"></span>`;
+                li.innerHTML = `${colorIndicator} ${c.name}: ${c.dose}mg (${c.volume.toFixed(3)} mL)`;
+                syringeContentsListUI.appendChild(li);
+            });
+        }
+
+        clearSyringeBtn.addEventListener('click', function() { 
+            currentSyringeCompounds = [];
+            syringeColorIndex = 0; 
+            updateSyringeContentsUI();
+            resultDisplay.style.display = 'none';
+            syringeVisualContainer.style.display = 'none';
+            this.style.display = 'none';
+        });
+
+        calculateTotalVolumeBtn.addEventListener('click', function() { 
+            if (!errorMessageP.textContent.includes("PK Graph") && !errorMessageP.textContent.includes("Half-life data not available")) {
+                errorDisplay.style.display = 'none';
+                errorMessageP.textContent = '';
+            }
+            if (currentSyringeCompounds.length === 0) { showError("No compounds in syringe to calculate."); return; }
+            let totalVolume = 0;
+            currentSyringeCompounds.forEach(c => { totalVolume += c.volume; });
+            const selectedSyringeMaxVolume = parseFloat(syringeSizeSelect.value);
+            const epsilon = 0.00001;
+            if (totalVolume > selectedSyringeMaxVolume + epsilon) {
+                showError(`Total volume (${totalVolume.toFixed(3)} mL) exceeds selected ${selectedSyringeMaxVolume} mL syringe.`);
+                syringeVisualContainer.style.display = 'none'; resultDisplay.style.display = 'none'; return;
+            }
+            totalCalculatedVolumeSpan.textContent = `${totalVolume.toFixed(3)} mL`;
+            resultDisplay.style.display = 'block';
+            syringeVisualContainer.style.display = 'flex';
+            drawMultiCompoundSyringe(currentSyringeCompounds, totalVolume, selectedSyringeMaxVolume);
+        });
+        
+        syringeSizeSelect.addEventListener('change', function() { 
+            if (currentSyringeCompounds.length > 0 && resultDisplay.style.display === 'block') {
+                calculateTotalVolumeBtn.click(); 
+            } else if (currentSyringeCompounds.length === 0) { 
+                const selectedSyringeMaxVolume = parseFloat(this.value);
+                syringeVisualContainer.style.display = 'flex';
+                drawMultiCompoundSyringe([], 0, selectedSyringeMaxVolume); 
+            }
+        });
+        
+        recalculateGraphBtn.addEventListener('click', function() { 
+            if (graphedCompoundDetails.length === 0) { showError("No compounds on the graph to recalculate.", true); return; }
+            if (errorMessageP.textContent.includes("PK Graph") || errorMessageP.textContent.includes("Half-life data not available")) {
+                 errorDisplay.style.display = 'none'; errorMessageP.textContent = '';
+            }
+            updatePkChart(); 
+        });
+
+        clearGraphBtn.addEventListener('click', function() { 
+            graphedCompoundDetails = [];
+            if (pkChartInstance) { pkChartInstance.destroy(); pkChartInstance = null; }
+            pkChartContainer.style.display = 'none';
+            this.style.display = 'none'; 
+            recalculateGraphBtn.style.display = 'none';
+            if (errorMessageP.textContent.includes("PK Graph") || errorMessageP.textContent.includes("Half-life data not available")) {
+                 errorDisplay.style.display = 'none'; errorMessageP.textContent = '';
+            }
+        });
+
+        function calculateConcentrationOverTime(detail, totalDays, injectionIntervalDaysForCalc) { 
+            const dataPoints = [];
+            for (let day = 0; day <= totalDays; day++) {
+                let currentConcentration = 0;
+                for (let injDay = 0; injDay <= day; injDay += injectionIntervalDaysForCalc) { 
+                    const timeSinceInjection = day - injDay;
+                    if (timeSinceInjection >= 0) {
+                        currentConcentration += detail.dose * Math.pow(0.5, timeSinceInjection / detail.halfLifeDays);
+                    }
+                }
+                dataPoints.push({ x: day, y: currentConcentration });
+            }
+            return dataPoints;
+        }
+
+        function getThemeColor(variableName) {
+            // This function is now less critical for syringe drawing as colors are set directly in JS for reliability.
+            // It's still used for Chart.js theming.
+            let color = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
+            return color.replace(/^['"]|['"]$/g, ""); // Remove quotes if any
+        }
+
+
+        function updatePkChart() { 
+            if (pkChartInstance) {
+                pkChartInstance.destroy();
+            }
+            const currentInjectionInterval = parseFloat(injectionIntervalDaysInput.value); 
+            const currentSimulationWeeks = parseInt(simulationDurationInput.value);
+
+            if (isNaN(currentInjectionInterval) || currentInjectionInterval <= 0) {
+                showError("PK Graph: Invalid injection interval (days) for recalculation.", true); return;
+            }
+            if (isNaN(currentSimulationWeeks) || currentSimulationWeeks <= 0 || currentSimulationWeeks > 52) {
+                showError("PK Graph: Invalid simulation duration for recalculation.", true); return;
+            }
+
+            const totalDays = currentSimulationWeeks * 7;
+            const datasets = graphedCompoundDetails.map((detail) => { 
+                const concentrationData = calculateConcentrationOverTime(detail, totalDays, currentInjectionInterval);
+                return {
+                    label: `${detail.originalName} (${detail.dose}mg, E${currentInjectionInterval.toFixed(1)}D)`, 
+                    data: concentrationData,
+                    borderColor: detail.color, 
+                    backgroundColor: detail.color + '33',
+                    fill: false,
+                    tension: 0.2,
+                    pointRadius: 1,
+                    pointHoverRadius: 5
+                };
+            });
+            
+            const gridColor = getThemeColor('--chart-grid-color');
+            const ticksColor = getThemeColor('--chart-ticks-color');
+            const labelColor = getThemeColor('--chart-label-color');
+            const legendColor = getThemeColor('--chart-legend-color');
+
+
+            pkChartInstance = new Chart(pkChartCanvas, {
+                type: 'line',
+                data: { datasets: datasets },
+                options: { 
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: { 
+                            type: 'linear', position: 'bottom', 
+                            title: { display: true, text: 'Time (Days)', color: labelColor },
+                            grid: { color: gridColor },
+                            ticks: { color: ticksColor, stepSize: 7, callback: function(value) { if (value % 7 === 0 && value >=0) return 'Wk ' + (value / 7); return null; } }
+                        },
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Estimated Active Amount (mg)', color: labelColor },
+                            grid: { color: gridColor },
+                            ticks: { color: ticksColor }
+                        }
+                    },
+                    plugins: { 
+                        legend: { position: 'top', labels: { usePointStyle: true, color: legendColor } },
+                        tooltip: { 
+                            mode: 'index', intersect: false, 
+                            titleColor: legendColor, 
+                            bodyColor: legendColor, 
+                            callbacks: {
+                                title: function(tooltipItems) { return `Day ${tooltipItems[0].parsed.x}`; },
+                                label: function(context) { let label = context.dataset.label || ''; if (label) { label += ': '; } if (context.parsed.y !== null) { label += context.parsed.y.toFixed(2) + ' mg'; } return label; }
+                            }
+                        }
+                    },
+                    interaction: { mode: 'nearest', axis: 'x', intersect: false }
+                }
+            });
+             if (graphedCompoundDetails.length > 0) {
+                pkChartContainer.style.display = 'block';
+                clearGraphBtn.style.display = 'inline-block';
+                recalculateGraphBtn.style.display = 'inline-block';
+            } else {
+                pkChartContainer.style.display = 'none';
+                clearGraphBtn.style.display = 'none';
+                recalculateGraphBtn.style.display = 'none';
+            }
+        }
+
+        function drawMultiCompoundSyringe(compoundsInSyringe, totalFillVolume, syringeMaxVolume) {
+            syringeSVG.innerHTML = ''; 
+            const svgWidth = 150; const svgHeight = 300; 
+            syringeSVG.setAttribute('width', svgWidth); syringeSVG.setAttribute('height', svgHeight);
+            const bodyWidth = 60; const bodyHeight = 220; 
+            const bodyX = (svgWidth - bodyWidth) / 2; const bodyY = 40; 
+            const needleHeight = 30; const needleWidth = 6;
+            const needleX = bodyX + (bodyWidth - needleWidth) / 2; const needleY = bodyY + bodyHeight;
+            const plungerTopWidth = bodyWidth + 20; const plungerTopHeight = 10;
+            const plungerTopX = bodyX - (plungerTopWidth - bodyWidth) / 2; const plungerTopY = bodyY - plungerTopHeight - 5; 
+            const plungerRodWidth = 10; const plungerRodX = bodyX + (bodyWidth - plungerRodWidth) / 2;
+            
+            const totalFillRatio = (syringeMaxVolume > 0) ? Math.min(totalFillVolume / syringeMaxVolume, 1) : 0;
+            const totalFillHeightPixels = totalFillRatio * bodyHeight;
+            const plungerRodHeight = bodyHeight - totalFillHeightPixels; 
+            const plungerRodY = bodyY; 
+
+            const ns = "http://www.w3.org/2000/svg";
+            const bodyRect = document.createElementNS(ns, 'rect');
+            bodyRect.setAttribute('x', bodyX); bodyRect.setAttribute('y', bodyY);
+            bodyRect.setAttribute('width', bodyWidth); bodyRect.setAttribute('height', bodyHeight);
+            
+            const isDarkMode = document.body.classList.contains('dark-mode');
+            let sBodyFill, sBodyStroke, sPlungerFill, sPlungerTopFill, sNeedleFill, sTickColor, sLabelColor;
+
+            if (isDarkMode) {
+                sBodyFill = 'transparent'; 
+                sBodyStroke = '#90A4AE'; // Light grey outline
+                sPlungerFill = '#78909C'; 
+                sPlungerTopFill = '#B0BEC5';
+                sNeedleFill = '#B0BEC5';   
+                sTickColor = '#FFFFFF';   // White ticks
+                sLabelColor = '#FFFFFF';  // White labels
+            } else {
+                sBodyFill = '#ECEFF1'; 
+                sBodyStroke = '#78909C'; 
+                sPlungerFill = '#B0BEC5';
+                sPlungerTopFill = '#78909C';
+                sNeedleFill = '#90A4AE';
+                sTickColor = '#546E7A'; 
+                sLabelColor = '#37474F'; 
+            }
+
+            bodyRect.setAttribute('fill', sBodyFill); 
+            bodyRect.setAttribute('stroke', sBodyStroke);
+            bodyRect.setAttribute('stroke-width', '1.5'); bodyRect.setAttribute('rx', '3'); bodyRect.setAttribute('ry', '3');
+            syringeSVG.appendChild(bodyRect);
+
+            let currentSegmentBottomY = bodyY + bodyHeight; 
+            if (totalFillVolume > 0) {
+                compoundsInSyringe.slice().reverse().forEach(compound => { 
+                    const segmentVolumeRatio = compound.volume / syringeMaxVolume;
+                    let segmentHeightPixels = segmentVolumeRatio * bodyHeight;
+                    
+                    if (segmentHeightPixels > 0.1) { 
+                        const liquidSegment = document.createElementNS(ns, 'rect');
+                        liquidSegment.setAttribute('x', bodyX + 1);
+                        const segmentY = Math.max(bodyY + 1, currentSegmentBottomY - segmentHeightPixels + 1);
+                        segmentHeightPixels = Math.max(0, currentSegmentBottomY - segmentY +1); 
+
+                        liquidSegment.setAttribute('y', segmentY);
+                        liquidSegment.setAttribute('width', bodyWidth - 2);
+                        liquidSegment.setAttribute('height', Math.max(0, segmentHeightPixels - (compoundsInSyringe.length > 1 ? 0.5 : 1) ) ); 
+                        liquidSegment.setAttribute('fill', compound.color); 
+                        
+                        liquidSegment.setAttribute('data-compound-name', compound.name);
+
+                        liquidSegment.addEventListener('mouseover', function(event) {
+                            syringeTooltip.textContent = this.getAttribute('data-compound-name');
+                            syringeTooltip.style.display = 'block';
+                        });
+                        liquidSegment.addEventListener('mousemove', function(event) {
+                            const svgRect = syringeSVG.getBoundingClientRect();
+                            let x = event.clientX - svgRect.left + 10; 
+                            let y = event.clientY - svgRect.top + 10;  
+                            if (x + syringeTooltip.offsetWidth > svgWidth) {
+                                x -= syringeTooltip.offsetWidth + 20; 
+                            }
+                            if (y + syringeTooltip.offsetHeight > svgHeight) {
+                                y -= syringeTooltip.offsetHeight + 20; 
+                            }
+                            const containerRect = syringeVisualContainer.getBoundingClientRect();
+                            const tooltipRect = syringeTooltip.getBoundingClientRect();
+                            if (event.clientX + 10 + tooltipRect.width > containerRect.right) {
+                                x = event.clientX - svgRect.left - tooltipRect.width - 10;
+                            } else {
+                                x = event.clientX - svgRect.left + 10;
+                            }
+                            if (event.clientY + 10 + tooltipRect.height > containerRect.bottom) {
+                                y = event.clientY - svgRect.top - tooltipRect.height - 10;
+                            } else {
+                                y = event.clientY - svgRect.top + 10;
+                            }
+                            syringeTooltip.style.left = x + 'px';
+                            syringeTooltip.style.top = y + 'px';
+                        });
+                        liquidSegment.addEventListener('mouseout', function() {
+                            syringeTooltip.style.display = 'none';
+                        });
+                        
+                        syringeSVG.appendChild(liquidSegment);
+                        currentSegmentBottomY -= segmentHeightPixels;
+                         if (currentSegmentBottomY < bodyY) currentSegmentBottomY = bodyY; 
+                    }
+                });
+            }
+            
+            const plungerRod = document.createElementNS(ns, 'rect');
+            plungerRod.setAttribute('x', plungerRodX); plungerRod.setAttribute('y', plungerRodY); 
+            plungerRod.setAttribute('width', plungerRodWidth); plungerRod.setAttribute('height', Math.max(0, plungerRodHeight));
+            plungerRod.setAttribute('fill', sPlungerFill); syringeSVG.appendChild(plungerRod);
+            
+            const plungerTop = document.createElementNS(ns, 'rect');
+            plungerTop.setAttribute('x', plungerTopX); plungerTop.setAttribute('y', plungerTopY);
+            plungerTop.setAttribute('width', plungerTopWidth); plungerTop.setAttribute('height', plungerTopHeight);
+            plungerTop.setAttribute('fill', sPlungerTopFill); 
+            plungerTop.setAttribute('rx', '3'); plungerTop.setAttribute('ry', '3');
+            syringeSVG.appendChild(plungerTop);
+
+            const needle = document.createElementNS(ns, 'rect');
+            needle.setAttribute('x', needleX); needle.setAttribute('y', needleY);
+            needle.setAttribute('width', needleWidth); needle.setAttribute('height', needleHeight);
+            needle.setAttribute('fill', sNeedleFill); syringeSVG.appendChild(needle);
+            const needleTip = document.createElementNS(ns, 'polygon');
+            const tipBaseY = needleY + needleHeight; const tipPointY = tipBaseY + needleWidth * 1.5; 
+            needleTip.setAttribute('points', `${needleX},${tipBaseY} ${needleX + needleWidth},${tipBaseY} ${needleX + needleWidth/2},${tipPointY}`);
+            needleTip.setAttribute('fill', sNeedleFill); syringeSVG.appendChild(needleTip);
+
+            let numMajorTicks, tickIncrement, minorTickFactor, labelPrecision;
+            if (syringeMaxVolume === 0.5) { numMajorTicks = 5; tickIncrement = 0.1; minorTickFactor = 2; labelPrecision = 1; }
+            else if (syringeMaxVolume === 1) { numMajorTicks = 10; tickIncrement = 0.1; minorTickFactor = 2; labelPrecision = 1;}
+            else { numMajorTicks = 6; tickIncrement = 0.5; minorTickFactor = 5; labelPrecision = 1;}
+            const tickStartX = bodyX; const majorTickLength = 12; const minorTickLength = 6;  
+            for (let i = 0; i <= numMajorTicks; i++) {
+                const volumeAtTick = i * tickIncrement; const epsilon = 0.0001; 
+                if (volumeAtTick > syringeMaxVolume + epsilon && Math.abs(volumeAtTick - syringeMaxVolume) > epsilon) continue;
+                const yPos = bodyY + bodyHeight - ( (Math.min(volumeAtTick, syringeMaxVolume) / syringeMaxVolume) * bodyHeight );
+                const majorTick = document.createElementNS(ns, 'line');
+                majorTick.setAttribute('x1', tickStartX - majorTickLength); majorTick.setAttribute('y1', yPos);
+                majorTick.setAttribute('x2', tickStartX);  majorTick.setAttribute('y2', yPos);
+                majorTick.setAttribute('stroke', sTickColor); majorTick.setAttribute('stroke-width', '1.2');
+                syringeSVG.appendChild(majorTick);
+                const tickLabel = document.createElementNS(ns, 'text');
+                tickLabel.setAttribute('x', tickStartX - majorTickLength - 4); tickLabel.setAttribute('y', yPos + 3.5); 
+                tickLabel.setAttribute('fill', sLabelColor); tickLabel.setAttribute('font-size', '9px');
+                tickLabel.setAttribute('font-family', 'Inter, sans-serif'); tickLabel.setAttribute('text-anchor', 'end'); 
+                tickLabel.textContent = volumeAtTick.toFixed(labelPrecision); syringeSVG.appendChild(tickLabel);
+                if (i < numMajorTicks && minorTickFactor > 0 && tickIncrement > 0) {
+                    const minorIncrementValue = tickIncrement / minorTickFactor;
+                    for (let j = 1; j < minorTickFactor; j++) {
+                        const minorVolumeAtTick = volumeAtTick + j * minorIncrementValue;
+                        if (minorVolumeAtTick >= syringeMaxVolume - epsilon && Math.abs(minorVolumeAtTick - syringeMaxVolume) > epsilon) break; 
+                        const minorYPos = bodyY + bodyHeight - ( (minorVolumeAtTick / syringeMaxVolume) * bodyHeight );
+                        const minorTick = document.createElementNS(ns, 'line');
+                        minorTick.setAttribute('x1', tickStartX - minorTickLength); minorTick.setAttribute('y1', minorYPos);
+                        minorTick.setAttribute('x2', tickStartX); minorTick.setAttribute('y2', minorYPos);
+                        minorTick.setAttribute('stroke', sTickColor); minorTick.setAttribute('stroke-width', '0.8');
+                        syringeSVG.appendChild(minorTick);
+                    }
+                }
+            }
+            const zeroYPos = bodyY + bodyHeight; let zeroLabelNeeded = true;
+            if (0 * tickIncrement === 0 && (0).toFixed(labelPrecision) === (0 * tickIncrement).toFixed(labelPrecision)) {
+                 const yPosForZero = bodyY + bodyHeight - ( (Math.min(0, syringeMaxVolume) / syringeMaxVolume) * bodyHeight );
+                 if (Math.abs(yPosForZero - zeroYPos) < 0.0001 ) { zeroLabelNeeded = false; }
+            }
+            if (syringeMaxVolume > 0 && zeroLabelNeeded) { 
+                const zeroTickLabel = document.createElementNS(ns, 'text');
+                zeroTickLabel.setAttribute('x', tickStartX - majorTickLength - 4); zeroTickLabel.setAttribute('y', zeroYPos + 3.5); 
+                zeroTickLabel.setAttribute('fill', sLabelColor); zeroTickLabel.setAttribute('font-size', '9px');
+                zeroTickLabel.setAttribute('font-family', 'Inter, sans-serif');
+                zeroTickLabel.setAttribute('text-anchor', 'end');
+                zeroTickLabel.textContent = (0).toFixed(labelPrecision); syringeSVG.appendChild(zeroTickLabel);
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            loadThemePreference(); 
+            populateAASCompounds();
+            updateSyringeContentsUI(); 
+            const initialSyringeMaxVolume = parseFloat(syringeSizeSelect.value);
+            syringeVisualContainer.style.display = 'flex'; 
+            drawMultiCompoundSyringe([], 0, initialSyringeMaxVolume); 
+        });
+
+    </script>
+<a href='https://ko-fi.com/J3J21FB0LZ' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+</body>
+</html>
