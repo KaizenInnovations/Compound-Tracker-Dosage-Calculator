@@ -4,7 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Compound Tracker & Dosage Calculator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta name="description" content="A tool to track AAS dosages and visualize pharmacokinetic estimations.">
+    
+    <link rel="manifest" href="manifest.json">
+    
+    <meta name="theme-color" content="#1976D2"> <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"> 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
@@ -50,7 +54,6 @@
             --graph-disclaimer-text: #e65100;
             --graph-disclaimer-border: #ffcc80;
             
-            /* Syringe CSS variables are less critical now as JS handles colors directly for drawing, but kept for consistency */
             --syringe-body-fill-light: #ECEFF1; 
             --syringe-body-stroke-light: #78909C; 
             --syringe-plunger-fill-light: #B0BEC5;
@@ -106,7 +109,6 @@
             --graph-disclaimer-text: #ffcc80;
             --graph-disclaimer-border: #8d6e63;
             
-            /* Syringe CSS variables for dark mode (less critical now for drawing) */
             --syringe-body-fill-dark: transparent;   
             --syringe-body-stroke-dark: #90A4AE; 
             --syringe-plunger-fill-dark: #78909C; 
@@ -873,12 +875,9 @@
         }
 
         function getThemeColor(variableName) {
-            // This function is now less critical for syringe drawing as colors are set directly in JS for reliability.
-            // It's still used for Chart.js theming.
             let color = getComputedStyle(document.documentElement).getPropertyValue(variableName).trim();
-            return color.replace(/^['"]|['"]$/g, ""); // Remove quotes if any
+            return color.replace(/^['"]|['"]$/g, "");
         }
-
 
         function updatePkChart() { 
             if (pkChartInstance) {
@@ -987,10 +986,10 @@
 
             if (isDarkMode) {
                 sBodyFill = 'transparent'; 
-                sBodyStroke = '#90A4AE'; // Light grey outline
-                sPlungerFill = '#78909C'; 
-                sPlungerTopFill = '#B0BEC5';
-                sNeedleFill = '#B0BEC5';   
+                sBodyStroke = '#90A4AE'; // Light grey outline (Blue Grey 200)
+                sPlungerFill = '#78909C'; // Blue Grey 300
+                sPlungerTopFill = '#B0BEC5';// Blue Grey 200
+                sNeedleFill = '#B0BEC5';   // Light Blue Grey 200
                 sTickColor = '#FFFFFF';   // White ticks
                 sLabelColor = '#FFFFFF';  // White labels
             } else {
@@ -1146,6 +1145,6 @@
         });
 
     </script>
-<a href='https://ko-fi.com/J3J21FB0LZ' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi2.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
+<a href='https://ko-fi.com/J3J21FB0LZ' target='_blank'><img height='36' style='border:0px;height:36px;' src='https://storage.ko-fi.com/cdn/kofi6.png?v=6' border='0' alt='Buy Me a Coffee at ko-fi.com' /></a>
 </body>
 </html>
